@@ -37,13 +37,18 @@ $app->post('/user/', function (Request $request, Response $response){  //Доб�
     $file = file_get_contents('users.json');
     $data = json_decode($file, true);
     if (isset($name)) {
-        if ($data['user'][0] === null) {
+        if (!$data['user'][0]) {
             $data['user'][0]['id'] = $id;
             $data['user'][0]['name'] = $name;
             file_put_contents('users.json', json_encode($data));
         } else {
-            $last_user = end($data['user']);
-            $id = $last_user['id'] + 1;
+            for ($i = count($data['user']); $i >= 0 ; $i--) {
+                $last_user = $data['user'][$i];
+                if ($last_user['id']) {
+                    $id = (int)$last_user['id'] + 1;
+                    break;
+                }
+            }
             $data['user'][$id - 1]['id'] = $id;
             $data['user'][$id - 1]['name'] = $name;
             file_put_contents('users.json', json_encode($data));
@@ -79,7 +84,7 @@ $app->delete('/user/', function (Request $request, Response $response) use ($app
     if (isset($id)) {
         for ($i = 0; $i < count($data['user']); $i++){
             if ($data['user'][$i]['id'] === $id){
-                $data['user'][$i] = null;
+                unset($data['user'][$i]);
                 file_put_contents('users.json', json_encode($data));
                 return $response->withJSON(['status'=>'User deleted', 'id'=>$id],200);
             }
